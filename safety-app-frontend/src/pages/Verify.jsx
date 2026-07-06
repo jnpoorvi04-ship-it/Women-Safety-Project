@@ -65,7 +65,7 @@ const Verify = () =>{
         try{
             const token = localStorage.getItem("token");
             await axios.post(
-            `${process.env.BACKEND_URL}/api/users/onboard`,
+            `${import.meta.env.VITE_BACKEND_URL}/api/users/onboard`,
             {
             aadhaarCard,
             phone,

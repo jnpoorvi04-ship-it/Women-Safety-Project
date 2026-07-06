@@ -32,7 +32,7 @@ const Home = () => {
         return;
       }
 
-      const res = await axios.get(`${process.env.BACKEND_URL}/api/users/me`, {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -98,7 +98,7 @@ const Home = () => {
             return;
           }
           await axios.post(
-            `${process.env.BACKEND_URL}/api/alerts/create`,
+            `${import.meta.env.VITE_BACKEND_URL}/api/alerts/create`,
             {
               lat: latitude,
               lng: longitude,

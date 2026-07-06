@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
 
-const socket = io(`${process.env.BACKEND_URL}`);
+const socket = io(`${import.meta.env.VITE_BACKEND_URL}`);
 
 export default socket;

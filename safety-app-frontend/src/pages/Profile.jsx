@@ -15,7 +15,7 @@ const Profile = ({
             const token = localStorage.getItem("token");
 
             const res = await axios.put(
-                `${process.env.BACKEND_URL}/api/users/profile`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/users/profile`,
                 {
                 phone: profileData.phone,
                 emergencyContacts: profileData.emergencyContacts,

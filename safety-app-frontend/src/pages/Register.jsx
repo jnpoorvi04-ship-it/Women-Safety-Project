@@ -19,7 +19,7 @@ const Register = () => {
           return;
         }
         try{
-            await axios.post(`${process.env.BACKEND_URL}/api/auth/register`,form);
+            await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`,form);
             alert("Registration successful");
             navigate("/login");
         } catch(error){

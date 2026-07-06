@@ -14,7 +14,7 @@ const Login = () => {
     const handleGoogleSuccess = async (credentialResponse) => {
       try {
         const res = await axios.post(
-          `${process.env.BAKEND_URL}/api/auth/google`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`,
           {
             googleToken: credentialResponse.credential,
           }
@@ -39,7 +39,7 @@ const Login = () => {
 
       try {
         const res = await axios.post(
-          `${process.env.BACKEND_URL}/api/auth/login`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
           { email, password }
         );
         localStorage.setItem("token", res.data.token);
