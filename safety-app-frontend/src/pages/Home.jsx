@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { connectSocket, getSocket, disconnectSocket } from "../socket/socket";
 import axios from "axios";
 import SOSButton from "../components/SOSButton";
 import Countdown from "../components/Countdown";
@@ -71,6 +72,34 @@ const Home = () => {
   getUserInfo();
 }, [navigate]);
 
+useEffect(() => {
+  if (!user || !user.verified) return;
+
+  const token = localStorage.getItem("token");
+  const socket = connectSocket(token);
+
+  socket.on("connect", () => {
+    console.log("Socket Connected:", socket.id);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log(err.message);
+  });
+
+  socket.on("alert-create", () => {
+    setScreen("sosSent");
+  });
+
+  socket.on("alert-error", (err) => {
+    alert(err.message);
+    setScreen("home");
+  });
+
+  return () => {
+    disconnectSocket();
+  };
+}, [user]);
+
   const handleVerifyNow = () =>{
     navigate("/verify");
   };
@@ -90,35 +119,20 @@ const Home = () => {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          const token = localStorage.getItem("token");
           
-          if (!token || !user) {
-            alert("Please login again.");
+          const socket = getSocket();
+
+          if(!socket || !socket.connected){
+            alert("Socket not connected");
             setScreen("home");
             return;
           }
-          await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/alerts/create`,
-            {
-              lat: latitude,
-              lng: longitude,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          socket.emit("send_sos", {
-          userId: user._id,
-          message: "Emergency SOS Alert",
-          name: user?.name || "Unknown User",
-          lat: latitude,
-          lng: longitude,
-          time: new Date().toLocaleString(),
-        });
+          
+          socket.emit("create-alert", {
+            latitude,
+            longitude,
+          });
 
-          setScreen("sosSent");
         } catch (error) {
           console.log(error);
 

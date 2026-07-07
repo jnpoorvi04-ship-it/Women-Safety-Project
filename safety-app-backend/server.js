@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes.js";
 import User from "./models/User.js";
 import http from "http";
 import userRoutes from "./routes/user.routes.js";
+import { initializeSocket } from "./sockets/socket.js";
 dotenv.config();
 
 const app = express();
@@ -30,6 +31,8 @@ app.get("/", (req, res) => {
 });
 
 const server = http.createServer(app);
+
+initializeSocket(server);
 
 mongoose
   .connect(process.env.MONGO_URI)
