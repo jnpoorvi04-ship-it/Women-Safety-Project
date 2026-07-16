@@ -11,7 +11,7 @@ const alertSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    default: "active",
+    default: "ACTIVE",
   },
   responders: [
     {

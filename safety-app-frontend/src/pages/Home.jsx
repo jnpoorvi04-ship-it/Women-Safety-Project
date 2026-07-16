@@ -5,6 +5,9 @@ import axios from "axios";
 import SOSButton from "../components/SOSButton";
 import Countdown from "../components/Countdown";
 import Profile from "./Profile";
+import AlertModal from "../components/alerts/AlertModal";
+import { useRef } from "react";
+import LiveTracking from "../components/maps/LiveTracking";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -13,7 +16,7 @@ const Home = () => {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
-
+  const [incomingAlerts, setIncomingAlerts] = useState([]);
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
@@ -21,6 +24,7 @@ const Home = () => {
     phone: "",
     emergencyContacts: [],
   });
+  const [liveLocation, setLiveLocation] = useState({});
 
   //Get latest user info after login
   useEffect(() => {
@@ -72,11 +76,26 @@ const Home = () => {
   getUserInfo();
 }, [navigate]);
 
+const watchIdRef = useRef(null);
+
+const liveLocSharing = (data) => {
+  watchIdRef.current = startLiveLocationSharing(data.alertId);
+  };
+
+const stopLiveLocationSharing = () => {
+    if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+    }
+};
+
 useEffect(() => {
   if (!user || !user.verified) return;
 
   const token = localStorage.getItem("token");
   const socket = connectSocket(token);
+
+  if(!socket) return;
 
   socket.on("connect", () => {
     console.log("Socket Connected:", socket.id);
@@ -86,7 +105,8 @@ useEffect(() => {
     console.log(err.message);
   });
 
-  socket.on("alert-create", () => {
+  socket.on("alert-create", async(data) => {
+    await liveLocSharing(data);
     setScreen("sosSent");
   });
 
@@ -95,7 +115,42 @@ useEffect(() => {
     setScreen("home");
   });
 
+  socket.on("incoming-alert", (data) => {
+     setIncomingAlerts(prev => {
+        // Prevent duplicate alerts
+        if (prev.some(a => a._id === data._id)) return prev;
+
+        return [data, ...prev];
+    });
+  });
+
+  socket.on("location-update", (data)=> {
+    const{
+      alertId,
+      latitude,
+      longitude,
+      updatedAt,
+    } = data;
+
+    setLiveLocation(prev => ({
+      ...prev,
+      [alertId]: {
+        latitude,
+        longitude,
+        updatedAt,
+      },
+    }));
+  });
+
+
   return () => {
+    socket.off("connect");
+    socket.off("connect_error");
+    socket.off("alert-create");
+    socket.off("alert-error");
+    socket.off("incoming-alert");
+    socket.off("location-update");
+
     disconnectSocket();
   };
 }, [user]);
@@ -115,42 +170,81 @@ useEffect(() => {
   const sendSOS = () => {
     setScreen("sending");
 
+  const socket = getSocket();
+  
+  if(!socket || !socket.connected){
+    alert("Socket not connected");
+    setScreen("home");
+    return;
+    }
+
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        try {
           const { latitude, longitude } = position.coords;
-          
-          const socket = getSocket();
-
-          if(!socket || !socket.connected){
-            alert("Socket not connected");
-            setScreen("home");
-            return;
-          }
           
           socket.emit("create-alert", {
             latitude,
             longitude,
-          });
-
-        } catch (error) {
-          console.log(error);
-
-          alert(error.response?.data?.message || "SOS sending failed");
-          setScreen("home");
-        }
+          })
       },
       (error) => {
         console.error("Location error:", error);
         alert("Please allow location access to send SOS.");
         setScreen("home");
-      }
-    );
-  };
+      },
 
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );  
+  }
   const handleOK = () => {
     setScreen("home");
   };
+
+  const handleDismiss = (alertId) => {
+    setIncomingAlerts(prev =>
+        prev.filter(alert => alert._id !== alertId)
+    );
+};
+
+  const startLiveLocationSharing = (alertId) => {
+
+    const socket = getSocket();
+
+    if (!socket || !socket.connected) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+
+        (position) => {
+
+            const { latitude, longitude } = position.coords;
+            console.log("Sending location", latitude, longitude);
+            socket.emit("location-update", {
+                alertId,
+                latitude,
+                longitude,
+            });
+
+        },
+
+        (error) => {
+            console.error(error);
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+        }
+
+    );
+
+    return watchId;
+};
 
 
   return (
@@ -167,6 +261,17 @@ useEffect(() => {
           )}
         </div>
       )}
+      <div className="mt-6 h-[500px]">
+    <LiveTracking />
+</div>
+      <>
+      {incomingAlerts && (
+        <AlertModal
+          alerts = {incomingAlerts}
+          onDismiss = {handleDismiss}
+        />
+      )}
+      </>
 
       {screen === "home" && <SOSButton onTrigger={startSOS} />}
 

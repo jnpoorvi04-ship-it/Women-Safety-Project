@@ -10,6 +10,7 @@ export const authSocket = async (socket, next) => {
 
         socket.user = await getAuthenticatedUser(token);
 
+        
         next();
     } catch (error) {
         next(new Error(error.message));
