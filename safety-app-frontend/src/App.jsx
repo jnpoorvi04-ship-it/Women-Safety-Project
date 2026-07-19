@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PoliceDashboard from "./pages/PoliceDashboard";
 import Verify from "./pages/Verify";
+import AlertTracker from "./pages/AlertTracker";
 
 function App() {
 
@@ -17,7 +18,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/police-dashboard" element={<PoliceDashboard />} />
         <Route path="/verify" element={<Verify />} />
-
+        <Route path="/track/:alertId" element={<AlertTracker />} />
         
       <Route path="/home"
       element={

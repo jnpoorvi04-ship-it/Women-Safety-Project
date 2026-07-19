@@ -1,10 +1,10 @@
 
 import {Map, Marker} from "@vis.gl/react-google-maps";
 
-const LiveTracking = () => {
+const LiveTracking = ({location}) => {
     const position= {
-        lat: 28.6139,
-        lng: 77.2090,
+        lat: location.latitude,
+        lng: location.longitude,
     };
 
     return(

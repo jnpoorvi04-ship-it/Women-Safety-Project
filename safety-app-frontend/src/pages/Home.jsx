@@ -8,7 +8,7 @@ import Profile from "./Profile";
 import AlertModal from "../components/alerts/AlertModal";
 import { useRef } from "react";
 import LiveTracking from "../components/maps/LiveTracking";
-
+import { useLocationContext } from "../context/LocationContext";
 const Home = () => {
   const navigate = useNavigate();
   const [user,setUser] = useState(null);
@@ -24,7 +24,9 @@ const Home = () => {
     phone: "",
     emergencyContacts: [],
   });
-  const [liveLocation, setLiveLocation] = useState({});
+  // const [liveLocation, setLiveLocation] = useState({});
+
+  const {liveLocation} = useLocationContext();
 
   //Get latest user info after login
   useEffect(() => {
@@ -222,7 +224,6 @@ useEffect(() => {
         (position) => {
 
             const { latitude, longitude } = position.coords;
-            console.log("Sending location", latitude, longitude);
             socket.emit("location-update", {
                 alertId,
                 latitude,
@@ -261,9 +262,9 @@ useEffect(() => {
           )}
         </div>
       )}
-      <div className="mt-6 h-[500px]">
-    <LiveTracking />
-</div>
+      {/* <div className="mt-6 h-[500px]">
+    <LiveTracking location = {location} />
+</div> */}
       <>
       {incomingAlerts && (
         <AlertModal

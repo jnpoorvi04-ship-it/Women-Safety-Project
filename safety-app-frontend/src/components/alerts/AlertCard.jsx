@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 export default function AlertCard({ alert, onDismiss }) {
+    const navigate = useNavigate();
     return (
         <div className="bg-white rounded-xl shadow-xl border-l-4 border-red-600 p-4 w-80">
 
@@ -10,16 +13,10 @@ export default function AlertCard({ alert, onDismiss }) {
                 <strong>{alert.senderName}</strong> needs help.
             </p>
 
-            <p className="text-sm mt-2">
-                Latitude: {alert.lat}
-            </p>
-
-            <p className="text-sm">
-                Longitude: {alert.lng}
-            </p>
-
-            <button onClick={() => handleViewLocation(alert._id)}>
-                View Location
+            <button onClick={() => navigate(`/track/${alert._id}`)}
+                className="w-full mt-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                Track Live Location
             </button>
 
             <button
