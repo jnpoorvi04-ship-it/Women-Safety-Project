@@ -1,13 +1,19 @@
 import {useParams} from "react-router-dom";
+import { useLocationContext } from "../context/LocationContext";
 import LiveTracking from "../components/maps/LiveTracking";
 
 const AlertTracker = () => {
     const {alertId} = useParams();
-    console.log(alertId);
-    const location = {
-        latitude: 28.6139,
-        longitude: 77.2090,
-    };
+    const {liveLocations} = useLocationContext();
+    const currentLocation = liveLocations[alertId];
+
+    if(!currentLocation){
+        return(
+            <div className="flex justify-center items-center h-screen">
+                Waiting for live location...
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
@@ -17,7 +23,7 @@ const AlertTracker = () => {
             </h1>
 
             <div className="rounded-xl overflow-hidden shadow-lg">
-                <LiveTracking location={location} />
+                <LiveTracking location={currentLocation.location} />
             </div>
 
         </div>

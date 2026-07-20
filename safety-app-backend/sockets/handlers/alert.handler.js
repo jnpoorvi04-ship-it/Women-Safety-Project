@@ -48,9 +48,7 @@ export const registerAlertHandlers = (io, socket) => {
 
                 if (!registeredUser) continue;
                 const contactSocketId = getUserSocket(registeredUser._id);
-                console.log(contactSocketId)
                 if (contactSocketId) {
-                    console.log("Sending incoming-alert");
                     io.to(contactSocketId).emit("incoming-alert", {                 
                         _id: alert._id,
                         senderName: socket.user.name,
@@ -83,7 +81,7 @@ export const registerAlertHandlers = (io, socket) => {
 
     socket.on("location-update", async(data) => {
         try{
-            const {alertId, latitude, longitude} = data;
+            const {alertId, location} = data;
             if(!alertId ||latitude == undefined|| longitude == undefined){
                 socket.emit("location-error", {
                     message: "Invalid location data",
@@ -111,11 +109,13 @@ export const registerAlertHandlers = (io, socket) => {
             for(const contactId of activeAlert.contacts){
                 const contactSocketId = getUserSocket(contactId);
                 if(!contactSocketId) continue;
-
+                console.log("Forwarding location to:", contactSocketId);
                 io.to(contactSocketId).emit("location-update", {
                     alertId,
-                    latitude,
-                    longitude,
+                    location:{
+                        latitude,
+                        longitude,
+                    },
                     updatedAt: Date.now(),
                 });
             }

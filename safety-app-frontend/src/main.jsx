@@ -7,6 +7,7 @@ import "./index.css";
 import AuthProvider from "./context/AuthContext";
 import MapProvider from "./components/maps/MapProvider.jsx";
 import { LocationProvider } from "./context/LocationContext.jsx";
+import { SocketProvider } from "./context/SocketContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
    <React.StrictMode>
@@ -14,9 +15,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <GoogleOAuthProvider clientId="726611670186-05p3s728uopg8ua5c9qe0qsfsabl1ijs.apps.googleusercontent.com">
         <AuthProvider>
           <MapProvider>
-            <LocationProvider>
-              <App />
-            </LocationProvider>
+            <SocketProvider>
+              <LocationProvider>
+                <App />
+              </LocationProvider>
+            </SocketProvider>
           </MapProvider>
         </AuthProvider>
       </GoogleOAuthProvider>

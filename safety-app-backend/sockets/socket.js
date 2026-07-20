@@ -17,7 +17,7 @@ export const initializeSocket = (httpServer) => {
 
     io.use(authSocket); 
 
-    io.on("connection", (socket) => {
+    io.on("connect", (socket) => {
         console.log("Socket connected:", socket.id);
         registerAlertHandlers(io, socket);
         addUser(socket.user._id, socket.id);

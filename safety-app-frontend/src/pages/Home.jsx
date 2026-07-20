@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { connectSocket, getSocket, disconnectSocket } from "../socket/socket";
 import axios from "axios";
 import SOSButton from "../components/SOSButton";
 import Countdown from "../components/Countdown";
@@ -9,6 +8,7 @@ import AlertModal from "../components/alerts/AlertModal";
 import { useRef } from "react";
 import LiveTracking from "../components/maps/LiveTracking";
 import { useLocationContext } from "../context/LocationContext";
+import { useSocketContext } from "../context/SocketContext";
 const Home = () => {
   const navigate = useNavigate();
   const [user,setUser] = useState(null);
@@ -24,9 +24,9 @@ const Home = () => {
     phone: "",
     emergencyContacts: [],
   });
-  // const [liveLocation, setLiveLocation] = useState({});
 
-  const {liveLocation} = useLocationContext();
+  const {liveLocations} = useLocationContext();
+  const { socket, connect, disconnect } = useSocketContext();
 
   //Get latest user info after login
   useEffect(() => {
@@ -92,13 +92,13 @@ const stopLiveLocationSharing = () => {
 };
 
 useEffect(() => {
-  if (!user || !user.verified) return;
-
+  if(!user || !user.verified) return;
   const token = localStorage.getItem("token");
-  const socket = connectSocket(token);
+  connect(token);
+},[user]);
 
-  if(!socket) return;
-
+useEffect(() => {
+  if (!socket) return;
   socket.on("connect", () => {
     console.log("Socket Connected:", socket.id);
   });
@@ -126,36 +126,15 @@ useEffect(() => {
     });
   });
 
-  socket.on("location-update", (data)=> {
-    const{
-      alertId,
-      latitude,
-      longitude,
-      updatedAt,
-    } = data;
-
-    setLiveLocation(prev => ({
-      ...prev,
-      [alertId]: {
-        latitude,
-        longitude,
-        updatedAt,
-      },
-    }));
-  });
-
-
   return () => {
     socket.off("connect");
     socket.off("connect_error");
     socket.off("alert-create");
     socket.off("alert-error");
     socket.off("incoming-alert");
-    socket.off("location-update");
-
-    disconnectSocket();
+    disconnect();
   };
-}, [user]);
+}, [socket]);
 
   const handleVerifyNow = () =>{
     navigate("/verify");
@@ -171,15 +150,12 @@ useEffect(() => {
 
   const sendSOS = () => {
     setScreen("sending");
-
-  const socket = getSocket();
   
   if(!socket || !socket.connected){
     alert("Socket not connected");
     setScreen("home");
     return;
     }
-
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -215,8 +191,6 @@ useEffect(() => {
 
   const startLiveLocationSharing = (alertId) => {
 
-    const socket = getSocket();
-
     if (!socket || !socket.connected) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -226,10 +200,11 @@ useEffect(() => {
             const { latitude, longitude } = position.coords;
             socket.emit("location-update", {
                 alertId,
-                latitude,
-                longitude,
+                location: {
+                  latitude,
+                  longitude,
+                },
             });
-
         },
 
         (error) => {
