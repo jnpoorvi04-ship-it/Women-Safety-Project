@@ -12,18 +12,12 @@ export const initializeSocket = (httpServer) => {
             credentials: true,
         },
     });
-
-   
-
     io.use(authSocket); 
 
     io.on("connect", (socket) => {
         console.log("Socket connected:", socket.id);
         registerAlertHandlers(io, socket);
-        addUser(socket.user._id, socket.id);
-
-
-
+        addUser(socket.user._id, socket.id)
         socket.on("disconnect", ()=> {
             console.log("Socket disconnected:", socket.id);
             removeUser(socket.user._id);

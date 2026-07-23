@@ -1,37 +1,25 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { getSocket } from "../socket/socket";
+import { useSocketContext } from "./SocketContext";
 
 const LocationContext = createContext();
 
 export const LocationProvider = ({children}) => {
 
-    useEffect(() => {
-        const socket = getSocket();
-        if(!socket) return;
+    const {socket} = useSocketContext();
 
-        const handleLocationUpdate = (data) => {
-            console.log("Context received:", data);
-            updateLocation(data);
-        };
-
-        socket.on("location-update", handleLocationUpdate);
-
-        return()=> {
-            socket.off("location-update", handleLocationUpdate);
-        };
-    },[]);
-
-    const [liveLocations, setLiveLocations] = useState({});
+     const [liveLocations, setLiveLocations] = useState({});
 
     const updateLocation = ({
         alertId,
-        latitude,
-        longitude,
+        location: {
+            longitude,
+            latitude,
+        },
         updatedAt,
     }) => {
         setLiveLocations(prev => ({
             ...prev,
-            [alertid]: {
+            [alertId]: {
                 location: {
                     latitude,
                     longitude,
@@ -40,6 +28,18 @@ export const LocationProvider = ({children}) => {
             },
         }));
     };
+
+    useEffect(() => {
+        if(!socket){
+            return;
+        }
+
+        socket.on("location-update", updateLocation);
+
+        return()=> {
+            socket.off("location-update", updateLocation);
+        };
+    },[socket]);
 
     const removeLocation = (alertId) => {
         setLiveLocations(prev => {

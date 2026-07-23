@@ -15,6 +15,12 @@ const AlertTracker = () => {
         );
     }
 
+    const handleNavigate = () => {
+        const {latitude, longitude} = location;
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving`;
+        window.open(url, "_blank");
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
 
@@ -25,7 +31,7 @@ const AlertTracker = () => {
             <div className="rounded-xl overflow-hidden shadow-lg">
                 <LiveTracking location={currentLocation.location} />
             </div>
-
+            
         </div>
     );
 };

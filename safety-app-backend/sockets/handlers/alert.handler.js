@@ -1,7 +1,7 @@
 import Alert from "../../models/Alert.js";
 import User from "../../models/User.js";
 import EmergencyContact from "../../models/EmergencyContact.js";
-import { getUserSocket } from "../onlineUsers.js";
+import { getUserSocket, getOnlineUsers } from "../onlineUsers.js";
 
 const activeAlerts = new Map();
 
@@ -35,18 +35,17 @@ export const registerAlertHandlers = (io, socket) => {
             const sender = await User.findById(socket.user._id)
                 .populate("emergencyContacts");
 
-            activeAlerts.set(alert._id.toString(), {
-                owner: socket.user._id.toString(),
-                contacts: sender.emergencyContacts.map(contact => contact._id.toString()),
-            });
-
             // Notify online emergency contacts
-            for (const contact of socket.user.emergencyContacts) {
+            const  contactUserIds = [];
+            for (const contact of sender.emergencyContacts) {
                 const registeredUser = await User.findOne({
                     email: contact.email
                 });
 
                 if (!registeredUser) continue;
+
+                contactUserIds.push(registeredUser._id.toString());
+
                 const contactSocketId = getUserSocket(registeredUser._id);
                 if (contactSocketId) {
                     io.to(contactSocketId).emit("incoming-alert", {                 
@@ -56,9 +55,12 @@ export const registerAlertHandlers = (io, socket) => {
                         lng: longitude,
                         createdAt: alert.createdAt,
                     });
-
                 }
             }
+            activeAlerts.set(alert._id.toString(), {
+                owner: socket.user._id.toString(),
+                contacts: contactUserIds,
+            });
 
             // Notify sender
             socket.emit("alert-create", {
@@ -77,11 +79,14 @@ export const registerAlertHandlers = (io, socket) => {
 
     });
 
-    //Locatio update handler
+    //Location update handler
 
     socket.on("location-update", async(data) => {
         try{
-            const {alertId, location} = data;
+            const {
+                alertId, 
+                location: {latitude, longitude},
+            } = data;
             if(!alertId ||latitude == undefined|| longitude == undefined){
                 socket.emit("location-error", {
                     message: "Invalid location data",
@@ -105,18 +110,17 @@ export const registerAlertHandlers = (io, socket) => {
                 return;
             }
 
-            //Broadcast loc to all online emergency contacts
             for(const contactId of activeAlert.contacts){
                 const contactSocketId = getUserSocket(contactId);
                 if(!contactSocketId) continue;
-                console.log("Forwarding location to:", contactSocketId);
+                
                 io.to(contactSocketId).emit("location-update", {
                     alertId,
                     location:{
                         latitude,
                         longitude,
                     },
-                    updatedAt: Date.now(),
+                    updatedAt: new Date(),
                 });
             }
 
@@ -180,11 +184,6 @@ export const registerAlertHandlers = (io, socket) => {
             socket.emit("alert-error", {
                 message: error.message,
             });
-
         }
-
     });
-
-    //
-
 };

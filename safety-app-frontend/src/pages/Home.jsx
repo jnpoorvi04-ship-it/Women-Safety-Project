@@ -108,7 +108,7 @@ useEffect(() => {
   });
 
   socket.on("alert-create", async(data) => {
-    await liveLocSharing(data);
+    liveLocSharing(data);
     setScreen("sosSent");
   });
 
@@ -132,7 +132,6 @@ useEffect(() => {
     socket.off("alert-create");
     socket.off("alert-error");
     socket.off("incoming-alert");
-    disconnect();
   };
 }, [socket]);
 
@@ -190,14 +189,15 @@ useEffect(() => {
 };
 
   const startLiveLocationSharing = (alertId) => {
-
-    if (!socket || !socket.connected) return;
-
+     if (!socket || !socket.connected) {
+        console.log("Socket not connected");
+        return;
+    }
+    
     const watchId = navigator.geolocation.watchPosition(
-
         (position) => {
-
             const { latitude, longitude } = position.coords;
+
             socket.emit("location-update", {
                 alertId,
                 location: {
@@ -206,19 +206,15 @@ useEffect(() => {
                 },
             });
         },
-
         (error) => {
             console.error(error);
         },
-
         {
             enableHighAccuracy: true,
             timeout: 10000,
             maximumAge: 0,
         }
-
     );
-
     return watchId;
 };
 
